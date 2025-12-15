@@ -7,6 +7,12 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 contract Lottery is VRFConsumerBaseV2Plus {
     error Lottery_EntryFeesNotEnough();
     error Lottery_TransferFailed();
+    error Lottery_LottryNotOpen();
+
+    enum LotteryState {
+        OPEN,
+        CALCULATING
+    }
 
     uint16 private constant REQUEST_CONFIRMATIONS = 3;
     uint32 private constant NUM_WORDS = 1;
@@ -18,6 +24,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     uint256 private s_lastTimeStamp;
     address payable[] s_players;
     address private s_recentWinner;
+    LotteryState private s_lottryState;
 
     event PlayerEnteredLottery(address indexed player);
 
@@ -35,11 +42,16 @@ contract Lottery is VRFConsumerBaseV2Plus {
         i_keyHash = gasLane;
         i_subscriptionId = subscriptionId;
         i_callbackGasLimit = callbackGasLimit;
+        s_lottryState = LotteryState.OPEN;
     }
 
     function enterLottery() public payable {
         if (msg.value < I_ENTRY_FEES) {
             revert Lottery_EntryFeesNotEnough();
+        }
+
+        if (s_lottryState != LotteryState.OPEN) {
+            revert Lottery_LottryNotOpen();
         }
         s_players.push(payable(msg.sender));
         emit PlayerEnteredLottery(msg.sender);
@@ -49,6 +61,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
         if ((block.timestamp - s_lastTimeStamp) < i_interval) {
             revert();
         }
+        s_lottryState = LotteryState.CALCULATING;
+
         VRFV2PlusClient.RandomWordsRequest memory request = VRFV2PlusClient.RandomWordsRequest({
             keyHash: i_keyHash,
             subId: i_subscriptionId,
@@ -65,6 +79,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
+        s_lottryState = LotteryState.OPEN;
         (bool, success) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Lottery_TransferFailed();
