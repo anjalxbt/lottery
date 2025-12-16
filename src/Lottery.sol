@@ -27,6 +27,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     LotteryState private s_lottryState;
 
     event PlayerEnteredLottery(address indexed player);
+    event WinnerPicked(address indexed winner);
 
     constructor(
         uint256 entryFees,
@@ -57,8 +58,31 @@ contract Lottery is VRFConsumerBaseV2Plus {
         emit PlayerEnteredLottery(msg.sender);
     }
 
-    function pickWinner() public {
-        if ((block.timestamp - s_lastTimeStamp) < i_interval) {
+    function checkUpkeep(
+        bytes memory /* checkData */
+    )
+        public
+        view
+        returns (
+            bool upkeepNeeded,
+            bytes memory /* performData */
+        )
+    {
+        bool timeHasPassed = ((block.timestamp - s_lastTimeStamp) >= i_interval);
+        bool isOpen = s_lottryState == LotteryState.OPEN;
+        bool hasBalance = address(this).balance > 0;
+        bool hasPlayers = s_players.length > 0;
+        upkeepNeeded = timeHasPassed && isOpen && hasBalance && hasPlayers;
+        return (upkeepNeeded, "");
+    }
+
+    function performUpkeep(
+        bytes calldata /* performData */
+    )
+        public
+    {
+        (bool upKeepNeeded,) = checkUpkeep("");
+        if (!upKeepNeeded) {
             revert();
         }
         s_lottryState = LotteryState.CALCULATING;
@@ -79,11 +103,16 @@ contract Lottery is VRFConsumerBaseV2Plus {
         uint256 indexOfWinner = randomWords[0] % s_players.length;
         address payable recentWinner = s_players[indexOfWinner];
         s_recentWinner = recentWinner;
+
         s_lottryState = LotteryState.OPEN;
-        (bool, success) = recentWinner.call{value: address(this).balance}("");
+        s_players = new address payable[](0);
+        s_lastTimeStamp = block.timestamp;
+
+        (bool success,) = recentWinner.call{value: address(this).balance}("");
         if (!success) {
             revert Lottery_TransferFailed();
         }
+        emit WinnerPicked(recentWinner);
     }
 
     function getEntryFees() external view returns (uint256) {
