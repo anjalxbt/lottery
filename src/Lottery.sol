@@ -119,4 +119,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
     function getEntryFees() external view returns (uint256) {
         return I_ENTRY_FEES;
     }
+
+    function getLottryState() external view returns (LotteryState) {
+        return s_lottryState;
+    }
 }
