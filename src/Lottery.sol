@@ -8,6 +8,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     error Lottery_EntryFeesNotEnough();
     error Lottery_TransferFailed();
     error Lottery_LottryNotOpen();
+    error Lottery_UpKeepNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
 
     enum LotteryState {
         OPEN,
@@ -83,7 +84,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     {
         (bool upKeepNeeded,) = checkUpkeep("");
         if (!upKeepNeeded) {
-            revert();
+            revert Lottery_UpKeepNeeded(address(this).balance, s_players.length, uint256(s_lottryState));
         }
         s_lottryState = LotteryState.CALCULATING;
 
