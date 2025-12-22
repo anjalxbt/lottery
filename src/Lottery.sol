@@ -123,4 +123,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
     function getLottryState() external view returns (LotteryState) {
         return s_lottryState;
     }
+
+    function getPlayer(uint256 index) external view returns (address) {
+        return s_players[index];
+    }
 }

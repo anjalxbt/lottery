@@ -30,9 +30,24 @@ contract LotteryTest is Test {
         gasLane = config.gasLane;
         subscriptionId = config.subscriptionId;
         callbackGasLimit = config.callbackGasLimit;
+
+        vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
     }
 
     function testLotteryIntializesInOpenState() public view {
         assert(lottery.getLottryState() == Lottery.LotteryState.OPEN);
+    }
+
+    function testLotteryRevertsWhenYouDontPayEnough() public {
+        vm.prank(PLAYER);
+        vm.expectRevert(Lottery.Lottery_EntryFeesNotEnough.selector);
+        lottery.enterLottery();
+    }
+
+    function testLotteryRecordsPlayerWhenEntered() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entryFees}();
+        address playerRecorded = lottery.getPlayer(0);
+        assert(playerRecorded == PLAYER);
     }
 }
