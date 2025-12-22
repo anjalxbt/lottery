@@ -10,6 +10,8 @@ contract LotteryTest is Test {
     Lottery public lottery;
     HelperConfig public helperConfig;
 
+    event PlayerEnteredLottery(address indexed player);
+
     uint256 entryFees;
     uint256 interval;
     address vrfCoordinator;
@@ -49,5 +51,12 @@ contract LotteryTest is Test {
         lottery.enterLottery{value: entryFees}();
         address playerRecorded = lottery.getPlayer(0);
         assert(playerRecorded == PLAYER);
+    }
+
+    function testEmitEventOnEntry() public {
+        vm.prank(PLAYER);
+        vm.expectEmit(true, false, false, false, address(lottery));
+        emit PlayerEnteredLottery(PLAYER);
+        lottery.enterLottery{value: entryFees}();
     }
 }
