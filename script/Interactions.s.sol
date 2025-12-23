@@ -6,6 +6,7 @@ import {HelperConfig} from "./HelperConfig.s.sol";
 import {VRFCoordinatorV2_5Mock} from "@chainlink/contracts/src/v0.8/vrf/mocks/VRFCoordinatorV2_5Mock.sol";
 import {LinkToken} from "../test/mocks/LinkToken.sol";
 import {CodeConstants} from "./HelperConfig.s.sol";
+import {DevOpsTools} from "lib/foundry-devops/src/DevOpsTools.sol";
 
 contract CreateSubscription is Script {
     function run() external returns (uint256) {
@@ -69,5 +70,28 @@ contract FundSubscription is Script, CodeConstants {
 
     function run() external {
         fundSubscriptionUsingConfig();
+    }
+}
+
+contract AddConsumer is Script {
+    function addConsumer(address lottery, address vrfCoordinator, uint256 subscriptionId) public {
+        console2.log("Adding consumer contract: ", lottery);
+        console2.log("Using VRFCoordinator: ", vrfCoordinator);
+        console2.log("On chain id: ", block.chainid);
+        vm.startBroadcast();
+        VRFCoordinatorV2_5Mock(vrfCoordinator).addConsumer(subscriptionId, lottery);
+        vm.stopBroadcast();
+    }
+
+    function addConsumerUsingConfig(address lottery) public {
+        HelperConfig helperConfig = new HelperConfig();
+        address vrfCoordinator = helperConfig.getConfig().vrfCoordinator;
+        uint256 subscriptionId = helperConfig.getConfig().subscriptionId;
+        addConsumer(lottery, vrfCoordinator, subscriptionId);
+    }
+
+    function run() external {
+        address lottery = DevOpsTools.get_most_recent_deployment("MyContract", block.chainid);
+        addConsumerUsingConfig(lottery);
     }
 }
