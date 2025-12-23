@@ -4,7 +4,7 @@ pragma solidity ^0.8.19;
 import {Script} from "../lib/forge-std/src/Script.sol";
 import {Lottery} from "../src/Lottery.sol";
 import {HelperConfig} from "./HelperConfig.s.sol";
-import {CreateSubscription} from "./Interactions.sol";
+import {CreateSubscription} from "./Interactions.s.sol";
 
 contract DeployLottery is Script {
     function deployContract() public returns (Lottery, HelperConfig) {

@@ -5,6 +5,7 @@ import {Test} from "../../lib/forge-std/src/Test.sol";
 import {Lottery} from "../../src/Lottery.sol";
 import {HelperConfig} from "../../script/HelperConfig.s.sol";
 import {DeployLottery} from "../../script/DeployLottery.s.sol";
+import {LinkToken} from "test/mocks/LinkToken.sol";
 
 contract LotteryTest is Test {
     Lottery public lottery;
@@ -18,6 +19,7 @@ contract LotteryTest is Test {
     bytes32 gasLane;
     uint256 subscriptionId;
     uint32 callbackGasLimit;
+    LinkToken linkToken;
 
     address public PLAYER = makeAddr("player");
     uint256 public constant STARTING_PLAYER_BALANCE = 10 ether;
@@ -32,6 +34,7 @@ contract LotteryTest is Test {
         gasLane = config.gasLane;
         subscriptionId = config.subscriptionId;
         callbackGasLimit = config.callbackGasLimit;
+        linkToken = LinkToken(config.linkToken);
 
         vm.deal(PLAYER, STARTING_PLAYER_BALANCE);
     }
