@@ -8,7 +8,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     error Lottery_EntryFeesNotEnough();
     error Lottery_TransferFailed();
     error Lottery_LottryNotOpen();
-    error Lottery_UpKeepNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
+    error Lottery_UpKeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
 
     enum LotteryState {
         OPEN,
@@ -84,7 +84,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
     {
         (bool upKeepNeeded,) = checkUpkeep("");
         if (!upKeepNeeded) {
-            revert Lottery_UpKeepNeeded(address(this).balance, s_players.length, uint256(s_lottryState));
+            revert Lottery_UpKeepNotNeeded(address(this).balance, s_players.length, uint256(s_lottryState));
         }
         s_lottryState = LotteryState.CALCULATING;
 
@@ -120,7 +120,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         return I_ENTRY_FEES;
     }
 
-    function getLottryState() external view returns (LotteryState) {
+    function getLotteryState() external view returns (LotteryState) {
         return s_lottryState;
     }
 

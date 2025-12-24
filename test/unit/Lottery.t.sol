@@ -40,7 +40,7 @@ contract LotteryTest is Test {
     }
 
     function testLotteryIntializesInOpenState() public view {
-        assert(lottery.getLottryState() == Lottery.LotteryState.OPEN);
+        assert(lottery.getLotteryState() == Lottery.LotteryState.OPEN);
     }
 
     function testLotteryRevertsWhenYouDontPayEnough() public {
@@ -74,5 +74,45 @@ contract LotteryTest is Test {
         vm.expectRevert(Lottery.Lottery_LottryNotOpen.selector);
         vm.prank(PLAYER);
         lottery.enterLottery{value: entryFees}();
+    }
+
+    function testCheckUpKeepReturnsFalseIfItHasNoBalance() public {
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        (bool upKeepNeeded,) = lottery.checkUpkeep("");
+        assert(!upKeepNeeded);
+    }
+
+    function testCheckUpKeepReturnsFalseIfLotteryIsntOpen() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entryFees}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        lottery.performUpkeep("");
+
+        (bool upKeepNeeded,) = lottery.checkUpkeep("");
+        assert(!upKeepNeeded);
+    }
+
+    function testPerformUpKeepCanOnlyRunIfCheckUpKeepIsTrue() public {
+        vm.prank(PLAYER);
+        lottery.enterLottery{value: entryFees}();
+        vm.warp(block.timestamp + interval + 1);
+        vm.roll(block.number + 1);
+
+        lottery.performUpkeep("");
+    }
+
+    function testPerformUpKeepCanOnlyRunIfCheckUpKeepIsFalse() public {
+        uint256 currentBalance = 0;
+        uint256 numPlayers = 0;
+        Lottery.LotteryState lState = lottery.getLotteryState();
+
+        vm.expectRevert(
+            abi.encodeWithSelector(Lottery.Lottery_UpKeepNotNeeded.selector, currentBalance, numPlayers, lState)
+        );
+        lottery.performUpkeep("");
     }
 }
