@@ -8,7 +8,8 @@ contract Lottery is VRFConsumerBaseV2Plus {
     error Lottery_EntryFeesNotEnough();
     error Lottery_TransferFailed();
     error Lottery_LottryNotOpen();
-    error Lottery_UpKeepNotNeeded(uint256 balance, uint256 playersLength, uint256 raffleState);
+    error Lottery_UpKeepNotNeeded(uint256 balance, uint256 playersLength, uint256 lotteryState);
+    event RequestedLotteryWinner(uint256 indexed requestId);
 
     enum LotteryState {
         OPEN,
@@ -98,6 +99,7 @@ contract Lottery is VRFConsumerBaseV2Plus {
         });
 
         uint256 requestId = s_vrfCoordinator.requestRandomWords(request);
+        emit RequestedLotteryWinner(requestId);
     }
 
     function fulfillRandomWords(uint256 requestId, uint256[] calldata randomWords) internal override {
@@ -126,5 +128,13 @@ contract Lottery is VRFConsumerBaseV2Plus {
 
     function getPlayer(uint256 index) external view returns (address) {
         return s_players[index];
+    }
+
+    function getLastTimeStamp() external view returns (uint256) {
+        return s_lastTimeStamp;
+    }
+
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
     }
 }
